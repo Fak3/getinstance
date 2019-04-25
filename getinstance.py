@@ -3,16 +3,16 @@ from weakref import WeakSet
 
 
 class InstanceManager:
-    def __init__(self, owner=None):
+    def __init__(self, owner=None, name=None):
         """
         owner should be provided if you want to add this manager dynamically 
         to the owner class.
         """
         if owner:
-            self.__set_name__(owner, None)
+            self.__set_name__(owner, name)
 
     def get(self, **kwargs):
-        for instance in self.owner._instances:
+        for instance in getattr(self.owner, self.weakset):
             match = True
             for attr in kwargs:
                 if not hasattr(instance, attr) or \
@@ -23,18 +23,24 @@ class InstanceManager:
                 return instance
 
     def all(self):
-        return self.owner._instances
-
+        return getattr(self.owner, self.weakset)
+    
+    def filter(self, **kwargs):
+        for instance in getattr(self.owner, self.weakset):
+            if all(getattr(instance, x) == kwargs[x] for x in kwargs):
+                yield instance
 
     def __set_name__(self, owner_class, name):
         """
         Called at the time the owning class `owner_class` is created. The InstanceManager 
         instance has been assigned to `name`.
         """
-        if hasattr(owner_class, '_instances'):
+        assert owner_class and name
+        self.weakset = f'_{name}_weakset'
+        if hasattr(owner_class, self.weakset):
             return
 
-        owner_class._instances = WeakSet()
+        setattr(owner_class, self.weakset, WeakSet())
         self.owner = owner_class
 
         # Override owner class __new__ method so that each time
@@ -43,10 +49,10 @@ class InstanceManager:
         
         def __new_wrapped__(cls, *args, **kwargs):
             if __new_original__ == object.__new__:
-                instance = object.__new__(cls)
+                instance = __new_original__(cls)
             else:
-                instance = super().__new__(cls, *args, **kwargs)
-            cls._instances.add(instance)
+                instance = __new_original__(cls, *args, **kwargs)
+            getattr(cls, self.weakset).add(instance)
             return instance
         
         owner_class.__new__ = __new_wrapped__
