@@ -23,12 +23,10 @@ class InstanceManager:
                 return instance
 
     def all(self):
-        return getattr(self.owner, self.weakset)
+        return ProxyInstances(self)
     
     def filter(self, **kwargs):
-        for instance in getattr(self.owner, self.weakset):
-            if all(getattr(instance, x) == kwargs[x] for x in kwargs):
-                yield instance
+        return ProxyInstances(self, kwargs)
 
     def __set_name__(self, owner_class, name):
         """
@@ -44,7 +42,7 @@ class InstanceManager:
         self.owner = owner_class
 
         # Override owner class __new__ method so that each time
-        # new instance is created, it is added to the `_instances`
+        # new instance is created, it is added to the weakset
         __new_original__ = getattr(owner_class, '__new__', None)
         
         def __new_wrapped__(cls, *args, **kwargs):
@@ -58,3 +56,32 @@ class InstanceManager:
         owner_class.__new__ = __new_wrapped__
 
  
+class ProxyInstances:
+    def __init__(self, manager, filter=None):
+        self.manager = manager
+        self.filter = filter
+        
+    def __iter__(self):
+        if self.filter:
+            for instance in getattr(self.manager.owner, self.manager.weakset):
+                if all(getattr(instance, x) == self.filter[x] for x in self.filter):
+                    yield instance
+        else:
+            for x in getattr(self.manager.owner, self.manager.weakset):
+                yield x
+        
+    def __getattribute__(self, name):
+        if name.startswith('_') or name in self.__dict__:
+            return super().__getattribute__(name)
+        return ProxyMethod(self, name)
+
+class ProxyMethod:
+    def __init__(self, instances, name):
+        self.instances = instances
+        self.name = name
+        
+    def __call__(self, *a, **kw):
+        for instance in self.instances:
+            getattr(instance, self.name)(*a, **kw)
+            
+    
