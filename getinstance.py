@@ -1,6 +1,7 @@
-
+#import logging
 from weakref import WeakSet
-
+#from loguru import logger
+#logger = logging.getLogger('getinstance')
 
 class InstanceManager:
     def __init__(self, owner=None, name=None):
@@ -55,20 +56,19 @@ class InstanceManager:
         
         owner_class.__new__ = __new_wrapped__
 
- 
 class ProxyInstances:
     def __init__(self, manager, filter=None):
         self.manager = manager
         self.filter = filter
         
     def __iter__(self):
-        if self.filter:
-            for instance in getattr(self.manager.owner, self.manager.weakset):
-                if all(getattr(instance, x) == self.filter[x] for x in self.filter):
-                    yield instance
-        else:
-            for x in getattr(self.manager.owner, self.manager.weakset):
-                yield x
+        ws = getattr(self.manager.owner, self.manager.weakset)
+        
+        for instance in list(ws):
+            if self.filter and not all(getattr(instance, x) == self.filter[x] for x in self.filter):
+                continue
+            if instance in ws:  # instance could have been pruned during iteration
+                yield instance
         
     def __getattribute__(self, name):
         if name.startswith('_') or name in self.__dict__:
