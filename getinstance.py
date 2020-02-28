@@ -58,16 +58,26 @@ class InstanceManager:
 
 class ProxyInstances:
     def __init__(self, manager, filter=None):
-        self.manager = manager
-        self.filter = filter
+        self._manager = manager
+        self._filter = filter
         
+    def _check_filter(self, instance):
+        if self._filter:
+            for pattern, value in self._filter.items():
+                current = instance
+                for attr in pattern.split('__'):
+                    current = getattr(current, attr)
+                if not current == value:
+                    return False
+        return True
+    
     def __iter__(self):
-        ws = getattr(self.manager.owner, self.manager.weakset)
+        weakset = getattr(self._manager.owner, self._manager.weakset)
         
-        for instance in list(ws):
-            if self.filter and not all(getattr(instance, x) == self.filter[x] for x in self.filter):
+        for instance in list(weakset):
+            if self._filter and not self._check_filter(instance):
                 continue
-            if instance in ws:  # instance could have been pruned during iteration
+            if instance in weakset:  # instance could have been pruned during iteration
                 yield instance
         
     def __getattribute__(self, name):
@@ -75,6 +85,13 @@ class ProxyInstances:
             return super().__getattribute__(name)
         return ProxyMethod(self, name)
 
+    def __setattr__(self, name, value):
+        if name.startswith('_') or name in self.__dict__:
+            return super().__setattr__(name, value)
+        for instance in self:
+            setattr(instance, name, value)
+        
+        
 class ProxyMethod:
     def __init__(self, instances, name):
         self.instances = instances
@@ -83,5 +100,6 @@ class ProxyMethod:
     def __call__(self, *a, **kw):
         for instance in self.instances:
             getattr(instance, self.name)(*a, **kw)
+            
             
     

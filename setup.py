@@ -10,7 +10,7 @@ except (IOError, ImportError):
 
 setup(
     name='getinstance',
-    version='0.3',
+    version='0.4',
     description='getinstance',
     long_description=description,
     author='Roman Evstifeev',
