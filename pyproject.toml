@@ -1,12 +1,12 @@
 [project]
 name = "getinstance"
-version = "0.5"
+version = "0.6"
 description = "getinstance"
 authors = [
     {name = "Evstifeev Roman", email = "someuniquename@gmail.com"},
 ]
 dependencies = []
-requires-python = ">3.11"
+requires-python = ">=3.11"
 readme = "README.md"
 license = {text = "MIT"}
 classifiers = [
