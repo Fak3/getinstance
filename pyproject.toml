@@ -28,6 +28,10 @@ classifiers = [
 distribution = true
 
 [tool.pdm.dev-dependencies]
+test = [
+    "pytest",
+    "pytest-mock>=3.14.0",
+]
 debug = [
     "ipdb>=0.13.13",
 ]
@@ -40,11 +44,3 @@ requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
 
-[dependency-groups]
-test = [
-    "pytest",
-    "pytest-mock>=3.14.0",
-]
-debug = [
-    "ipdb>=0.13.13",
-]
