@@ -23,6 +23,15 @@ classifiers = [
     "Topic :: Utilities",
 ]
 
+
+[tool.pdm]
+distribution = true
+
+[tool.pdm.dev-dependencies]
+debug = [
+    "ipdb>=0.13.13",
+]
+
 [project.urls]
 Homepage = "https://github.com/Fak3/getinstance"
 
@@ -30,5 +39,12 @@ Homepage = "https://github.com/Fak3/getinstance"
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
 
-[tool.pdm]
-distribution = true
+
+[dependency-groups]
+test = [
+    "pytest",
+    "pytest-mock>=3.14.0",
+]
+debug = [
+    "ipdb>=0.13.13",
+]
